@@ -9,9 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.26",
+    "@clerk/clerk-react": "^5.53.4",
     "@clerk/nextjs": "^6.34.1",
+    "@convex-dev/agent": "^0.2.12",
+    "@convex-dev/rag": "^0.5.4",
     "@mendable/firecrawl-js": "^4.4.1",
     "@radix-ui/react-slot": "^1.2.3",
+    "ai": "^5.0.85",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.28.0",
@@ -19,7 +24,8 @@
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

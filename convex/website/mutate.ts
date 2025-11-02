@@ -1,16 +1,170 @@
 import { ConvexError, v } from "convex/values";
-import { mutation } from "../_generated/server";
+import { action, internalMutation, internalQuery, mutation } from "../_generated/server";
+import { rag } from "../ai/rag";
+import { internal } from "../_generated/api";
 
-export const sendMessage = mutation({
+
+
+
+/**
+ * Internal mutation to save a scraped website to the DB.
+ * @param metadata - stringified JSON metadata of website (title, desc, icons etc)
+ * @param data - main markdown/raw website text
+ * @param links - comma separated list of links found on page
+ * @param url - original website URL
+ * @returns Object containing inserted id + combined markdown+links text
+ */
+export const saveWebsiteInternal = internalMutation({
     args:{
-        website:v.id("website"),
-        content:v.string(),
+         metadata:v.string(),
+         data:v.string(),
+         links:v.string(),
+         url:v.string(),
+    },
+     handler:async(ctx,args)=>{
+        const auth = await ctx.auth.getUserIdentity();
+        if(!auth) throw new ConvexError("Unauthorized");
+        const website = await ctx.db.insert("website_data",{
+            data:`
+            ${args.data}\n
+            ${args.links}
+            `,
+            metadata:args.metadata,
+            url:args.url,
+            user_id:auth.subject
+        });
+      return {
+        id:website,
+        data:`
+            ${args.data}\n
+            ${args.links}
+            `
+      }
+     }
+});
+
+
+
+/**
+ * Internal mutation to store RAG entry_id after AI vector indexing is done.
+ * @param entry_id - RAG vector database entry ID
+ * @param id - DB id of website_data row to attach rag entry id to
+ */
+export const saveWebsiteRagInternal = internalMutation({
+    args:{
+         entry_id:v.string(),
+         id:v.id("website_data")
+    },
+     handler:async(ctx,args)=>{
+        const auth = await ctx.auth.getUserIdentity();
+        if(!auth) throw new ConvexError("Unauthorized");
+        await ctx.db.patch(args.id,{
+            entry_id:args.entry_id
+        })
+        
+     }
+});
+
+
+
+
+/**
+ * Public Action: Scrape website → store data → index into RAG
+ * This is your main pipeline starter.
+ * 
+ * Steps:
+ * - scrape remote URL
+ * - store markdown + links + metadata inside convex
+ * - push entire data to RAG AI indexing
+ * - attach the rag entry id back to the same website_data row
+ * 
+ * @param url - website URL to scrape and index
+ */
+export const saveWebsite =action({
+    args:{
+        url:v.string()
     },
     handler:async(ctx,args)=>{
         const auth = await ctx.auth.getUserIdentity();
-        if(!auth) throw new ConvexError("Un authorized");
-        const data = await ctx.db.get(args.website);
-        if(!data) throw new Error("no website found")
+        if(!auth) throw new ConvexError("Unauthorized");
+        const req = await fetch("https://gr2q598g-3000.inc1.devtunnels.ms/api/scrape/website?website="+args.url,{
+            headers:{
+                'X-CONVEX-KEY':'test123'
+            }
+        });
+        const res = await req.json();
+        const {data,id} = await ctx.runMutation(internal.website.mutate.saveWebsiteInternal,{
+            data:JSON.stringify(res['markdown']),
+            links:res['links'].join(','),
+            metadata:JSON.stringify(res['metadata']),
+            url:args.url
+        });
+           const {entryId} = await rag.add(ctx,{
+            namespace:id,
+            text:`
+            ${data}
+            `
+        });
+        await ctx.runMutation(internal.website.mutate.saveWebsiteRagInternal,{
+            entry_id:entryId,
+            id:id
+        })
+        
         
     }
 });
+
+
+
+/**
+ * Create a chat room from a stored + indexed website.
+ * This uses metadata from stored website_data record.
+ * 
+ * @param id - convex id of website_data to convert into chat
+ */
+export const CreateChatFromWebsite = mutation({
+    args:{
+        id:v.id("website_data"),
+    },
+    handler:async(ctx,args)=>{
+           const auth = await ctx.auth.getUserIdentity();
+        if(!auth) throw new ConvexError("Unauthorized");
+        const website = await ctx.db.get(args.id)
+        if(!website) throw new Error("not found")
+        if(website.user_id!==auth.subject ) throw new Error("un authorized")
+        if(!website.entry_id) throw new Error("website not indexed yet please wait")
+        const {description,title,favicon,banner} = JSON.parse(website.metadata)
+        await ctx.db.insert("chat",{
+            description,
+            favicon,
+            name:title,
+            website_id:website._id,
+            user_id:auth.subject
+            });
+     
+    }
+});
+
+
+/**
+ * Deletes chat permanently for that user.
+ * @param id - convex chat id
+ */
+export const deleteChat = mutation({
+  args: {
+    id: v.id("chat"),
+  },
+  handler: async (ctx, args) => {
+    const auth = await ctx.auth.getUserIdentity();
+    if (!auth) throw new ConvexError("Unauthorized");
+
+    const chat = await ctx.db.get(args.id);
+    if (!chat) throw new Error("Chat not found");
+    if (chat.user_id !== auth.subject) throw new ConvexError("Not allowed");
+
+    await ctx.db.delete(args.id);
+  },
+});
+
+
+                                                                                                     

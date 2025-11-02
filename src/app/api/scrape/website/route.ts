@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {Firecrawl} from '@mendable/firecrawl-js'
 export const GET = async(req:NextRequest)=>{
-    // const auth_key = req.headers.get('X-CONVEX-KEY')
-    // if(auth_key!==process.env.CONVEX_INTERNAL_KEY) return NextResponse.json({error:"un authorized"},{status:401});
+    const auth_key = req.headers.get('X-CONVEX-KEY')
+    if(auth_key!=='test123') return NextResponse.json({error:"un authorized"},{status:401});
     const website = req.nextUrl.searchParams.get("website");
     if(!website)return NextResponse.json({error:"data not found"},{status:400})
     try {
