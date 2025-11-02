@@ -1,4 +1,4 @@
-import CreateChatBtn from '@/components/website/chat/create-chat-btn'
+import CreateChatBtn from '@/components/website/chat/create-chat-input'
 import SendMessageBtn from '@/components/website/chat/send-message-btn';
 import { Id } from '../../../../../../../convex/_generated/dataModel';
 

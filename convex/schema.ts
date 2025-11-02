@@ -16,7 +16,7 @@ export default defineSchema({
         metadata:v.string(),
         entry_id:v.optional(v.string()),
         user_id:v.string(),
-    }),
+    }).index("by_user",["user_id"]),
     chat:defineTable({
         favicon:v.string(),
         name:v.string(),
@@ -24,7 +24,8 @@ export default defineSchema({
         website_id:v.id("website_data"),
         user_id:v.string(),
         thread_id:v.optional(v.string())
-    }),
+    }).index("by_user",["user_id"])
+    .index("by_user_website",["user_id","website_id"]),
     token_usage:defineTable({
      user_id:v.string(),
      token_available:v.number(),
@@ -32,5 +33,5 @@ export default defineSchema({
      plan:v.union(v.literal("free"),v.literal("pro"),v.literal("ultra")),
      website_index_available:v.number(),
      chat_creation_available:v.number()
-    })
+    }).index("by_user",["user_id"]),
 })

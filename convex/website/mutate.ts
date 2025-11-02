@@ -125,6 +125,7 @@ export const saveWebsite =action({
 export const CreateChatFromWebsite = mutation({
     args:{
         id:v.id("website_data"),
+        msg:v.optional(v.string())
     },
     handler:async(ctx,args)=>{
            const auth = await ctx.auth.getUserIdentity();
@@ -134,13 +135,14 @@ export const CreateChatFromWebsite = mutation({
         if(website.user_id!==auth.subject ) throw new Error("un authorized")
         if(!website.entry_id) throw new Error("website not indexed yet please wait")
         const {description,title,favicon,banner} = JSON.parse(website.metadata)
-        await ctx.db.insert("chat",{
+        const chatid =await ctx.db.insert("chat",{
             description,
             favicon,
             name:title,
             website_id:website._id,
             user_id:auth.subject
             });
+            return  chatid
      
     }
 });

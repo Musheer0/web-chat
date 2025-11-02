@@ -11,7 +11,9 @@
 import type * as ai_agent_index from "../ai/agent/index.js";
 import type * as ai_rag_index from "../ai/rag/index.js";
 import type * as ai_tools_query_rag from "../ai/tools/query_rag.js";
+import type * as website_chat_crud from "../website/chat/crud.js";
 import type * as website_chat_mutate from "../website/chat/mutate.js";
+import type * as website_crud from "../website/crud.js";
 import type * as website_mutate from "../website/mutate.js";
 
 import type {
@@ -32,7 +34,9 @@ declare const fullApi: ApiFromModules<{
   "ai/agent/index": typeof ai_agent_index;
   "ai/rag/index": typeof ai_rag_index;
   "ai/tools/query_rag": typeof ai_tools_query_rag;
+  "website/chat/crud": typeof website_chat_crud;
   "website/chat/mutate": typeof website_chat_mutate;
+  "website/crud": typeof website_crud;
   "website/mutate": typeof website_mutate;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
