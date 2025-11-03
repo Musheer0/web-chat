@@ -120,3 +120,22 @@
     @apply bg-background text-foreground;
   }
 }
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.prose table th,
+.prose table td {
+  border: 1px solid rgba(100,100,100,0.3);
+  padding: 8px 12px;
+}
+
+.prose table th {
+  background: rgba(255,255,255,0.08);
+  font-weight: 600;
+}
+
+.prose table tr:nth-child(even) {
+  background: rgba(255,255,255,0.03);
+}

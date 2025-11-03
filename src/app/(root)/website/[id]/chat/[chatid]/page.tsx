@@ -1,12 +1,14 @@
 import CreateChatBtn from '@/components/website/chat/create-chat-input'
-import SendMessageBtn from '@/components/website/chat/send-message-btn';
+import SendMessageInput from '@/components/website/chat/send-message-input';
 import { Id } from '../../../../../../../convex/_generated/dataModel';
+import ChatMessages from '@/components/website/chat/chat-messages';
 
 const page = async({params}:{params:Promise<{chatid:string}>}) => {
     const {chatid}=await params;
   return (
-    <div>
-      <SendMessageBtn id={chatid as Id<"chat">}/>
+    <div className='flex relative flex-col overflow-y-auto p-2  w-full h-full'>
+      <ChatMessages id={chatid as Id<"chat">}/>
+      <SendMessageInput id={chatid as Id<"chat">}/>
     </div>
   )
 }

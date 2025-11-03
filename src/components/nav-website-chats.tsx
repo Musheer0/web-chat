@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { ChevronRight, MessageCircle, type LucideIcon } from "lucide-react"
 
 import {
   Collapsible,
@@ -26,6 +26,7 @@ import { Id } from "../../convex/_generated/dataModel"
 import React from "react"
 import NavWebsiteChatCard from "./nav-website-chat-card"
 import NavWebsiteChatCardSkeletonList from "./skeletons/sidebar-nav-chat-list-skeleton"
+import { Button } from "./ui/button"
 
 export function NavWebsiteChats() {
   const pathname = usePathname()
@@ -40,6 +41,10 @@ export function NavWebsiteChats() {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Website Chats</SidebarGroupLabel>
+      <Link href={'/website/'+params.id}>
+      <Button variant={'outline'} size={'sm'} className="w-full text-sm flex items-center justify-start">
+       <MessageCircle/> New Chat 
+        </Button></Link>
       <SidebarMenu>
       {results.map((r)=>{
         return (

@@ -33,7 +33,6 @@ export function SiteHeader() {
         <Separator orientation="vertical" className="mr-2 h-4" />
                       <BreadcrumbPage>{site_title}</BreadcrumbPage>
 
-        <SearchForm className="w-full sm:ml-auto sm:w-auto" />
       </div>
     </header>
   )

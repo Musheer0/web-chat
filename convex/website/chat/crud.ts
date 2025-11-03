@@ -20,4 +20,26 @@ export const GetUserWebsiteChats = query({
                 page:filtered_results
             }
      }
+});
+export const GetPaginatedMessages = query({
+  args:{
+    paginationOpts: paginationOptsValidator,
+    chat_id: v.id("chat")
+  },
+  handler: async (ctx,args)=>{
+     const auth = await ctx.auth.getUserIdentity()
+     if(!auth) throw new ConvexError("bro log in first 💀")
+
+     const messages = await ctx.db
+       .query("message")
+       .withIndex("by_user_chat", (q)=>q.eq("chat", args.chat_id).eq("user_id", auth.subject))
+       .paginate(args.paginationOpts)
+
+     return {
+       ...messages,
+       page: messages.page.map(msg => ({
+         ...msg
+       }))
+     }
+  }
 })

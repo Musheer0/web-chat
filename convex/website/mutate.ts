@@ -1,7 +1,10 @@
 import { ConvexError, v } from "convex/values";
 import { action, internalMutation, internalQuery, mutation } from "../_generated/server";
 import { rag } from "../ai/rag";
-import { internal } from "../_generated/api";
+import { components, internal } from "../_generated/api";
+import { titleAgent } from "../ai/agent";
+import { Id } from "../_generated/dataModel";
+import { auth } from "@clerk/nextjs/server";
 
 
 
@@ -115,37 +118,82 @@ export const saveWebsite =action({
 });
 
 
-
 /**
- * Create a chat room from a stored + indexed website.
- * This uses metadata from stored website_data record.
- * 
- * @param id - convex id of website_data to convert into chat
+ * Internal Function to create chat by taking ai generated title
  */
-export const CreateChatFromWebsite = mutation({
-    args:{
-        id:v.id("website_data"),
-        msg:v.optional(v.string())
-    },
-    handler:async(ctx,args)=>{
-           const auth = await ctx.auth.getUserIdentity();
-        if(!auth) throw new ConvexError("Unauthorized");
-        const website = await ctx.db.get(args.id)
-        if(!website) throw new Error("not found")
-        if(website.user_id!==auth.subject ) throw new Error("un authorized")
-        if(!website.entry_id) throw new Error("website not indexed yet please wait")
-        const {description,title,favicon,banner} = JSON.parse(website.metadata)
-        const chatid =await ctx.db.insert("chat",{
-            description,
-            favicon,
-            name:title,
-            website_id:website._id,
-            user_id:auth.subject
-            });
-            return  chatid
-     
-    }
+export const createChatInternal = internalMutation({
+  args: {
+    websiteId: v.id("website_data"),
+    title: v.string(),
+    msg: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const auth = await ctx.auth.getUserIdentity();
+    if (!auth) throw new ConvexError("Unauthorized");
+    const website = await ctx.db.get(args.websiteId);
+    if (!website) throw new Error("not found");
+    if (website.user_id !== auth.subject) throw new Error("un authorized");
+    if (!website.entry_id) throw new Error("website not indexed yet please wait");
+    const { description, favicon } = JSON.parse(website.metadata);
+    const chatId = await ctx.db.insert("chat", {
+      description,
+      favicon,
+      name: args.title,
+      website_id: website._id,
+      user_id: auth.subject,
+    });
+
+    return chatId;
+  }
 });
+/**
+ * Internal function to get website 
+ */
+export const GetWebsiteInternal = internalQuery({
+    args:{
+        id:v.id("website_data")
+    },
+     handler: async (ctx, args) => {
+    const auth = await ctx.auth.getUserIdentity();
+    if (!auth) throw new ConvexError("Unauthorized");
+
+    const website = await ctx.db.get(args.id);
+    if (!website) throw new Error("not found");
+    if (website.user_id !== auth.subject) throw new Error("un authorized");
+    if (!website.entry_id) throw new Error("website not indexed yet please wait");
+    return website
+  }
+});
+export const CreateChatFromWebsite = action({
+    args:{
+          websiteId: v.id("website_data"),
+    msg: v.optional(v.string())
+    },handler:async(ctx,args)=>{
+          const auth = await ctx.auth.getUserIdentity();
+    if (!auth) throw new ConvexError("Unauthorized");
+
+    const website = await ctx.runQuery(internal.website.mutate.GetWebsiteInternal,{id:args.websiteId});
+    var title = JSON.parse(website.metadata).title as string;
+    if(args.msg){
+        const {text} = await titleAgent.generateText(ctx,{userId:auth.subject},{prompt:`
+            chat title:${title}
+            user first message: ${args.msg}
+            `});
+            title = text
+    }
+     const chatId:any = await ctx.runMutation(internal.website.mutate.createChatInternal,{
+        ...args,
+        title
+    });
+    if(args.msg){
+      await ctx.runAction(internal.website.chat.mutate.SendMsgInternal,{
+      id:chatId,
+      content:args.msg
+    })
+    }
+    return chatId
+    }
+})
 
 
 /**

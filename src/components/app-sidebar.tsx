@@ -31,20 +31,20 @@ const data = {
   navMain: [
     {
       title: "Websites",
-      url: "website",
+      url: "/website",
       icon: EarthIcon,
       isActive: true,
       items: [],
     },
     {
       title: "Billing",
-      url: "#",
+      url: "/billing",
       icon: ReceiptIcon,
       items: [],
     },
     {
       title: "How to use",
-      url: "#",
+      url: "/how-to-use",
       icon: BookOpen,
       items: [    ],
     }

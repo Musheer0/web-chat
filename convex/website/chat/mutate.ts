@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { action, internalMutation } from "../../_generated/server";
+import { action, internalAction, internalMutation } from "../../_generated/server";
 import { rag } from "../../ai/rag";
 import { components, internal } from "../../_generated/api";
 import { createThread } from "@convex-dev/agent";
@@ -100,6 +100,46 @@ export const SendAiMessageInternal =internalMutation({
  * @param content - user input text message
  */
 export const SendMsg = action({
+    args:{
+         id:v.id("chat"),
+        content:v.string()
+    },
+    handler:async(ctx,args)=>{
+             const auth = await ctx.auth.getUserIdentity();
+          if(!auth) throw new ConvexError("Unauthorized");
+       const chat =  await ctx.runMutation(internal.website.chat.mutate.SendMessageInternal,{
+            ...args
+        });
+      const {text}= await rag.search(ctx,{
+        namespace:chat.website_id,
+        query:args.content,
+        limit:4,
+        vectorScoreThreshold:0.48,
+        chunkContext:{
+          before:1,
+          after:1
+        },
+      });
+      const {text:AgentText,usage:AgentUsage} = await agent.generateText(ctx,{
+        threadId:chat.thread_id,
+        userId:auth.subject
+      },{prompt:`
+        <user question>
+      ${args.content}
+        </user question>
+        <provided content>
+        ${text}
+        </provided content>
+        `});
+        await ctx.runMutation(internal.website.chat.mutate.SendAiMessageInternal,{
+          content:AgentText,
+          usage:AgentUsage.totalTokens||0,
+          id:args.id,
+          rag_content:text
+        });
+    }
+})
+export const SendMsgInternal = internalAction({
     args:{
          id:v.id("chat"),
         content:v.string()

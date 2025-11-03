@@ -1,16 +1,12 @@
 import CreateChatBtn from '@/components/website/chat/create-chat-input'
-import { useSiteTitlte } from '@/hooks/use-site-header';
-import { useEffect } from 'react';
+import { Id } from '../../../../../convex/_generated/dataModel';
 
 const page = async({params}:{params:Promise<{id:string}>}) => {
     const {id}=await params;
-    const {setSiteTitle} = useSiteTitlte()
-    useEffect(()=>{
-      setSiteTitle("Indexed Websites")
-    },[])
+ 
   return (
     <div>
-      <CreateChatBtn id={id}
+      <CreateChatBtn id={id as Id<"website_data">}
       
       />
     </div>

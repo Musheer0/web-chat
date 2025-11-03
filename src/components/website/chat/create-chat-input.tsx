@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import TextareaAutosize from "react-textarea-autosize"
 import { useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { SendIcon } from "lucide-react"
-import { useMutation } from "convex/react"
+import { useAction, useMutation, useQuery } from "convex/react"
 import { api } from "../../../../convex/_generated/api"
 import { Id } from "../../../../convex/_generated/dataModel"
 import { useRouter } from "next/navigation"
+import { useSiteTitlte } from "@/hooks/use-site-header"
 
 export default function CreateChatInput({id}:{id:Id<"website_data">}) {
   const { user } = useUser()
@@ -16,10 +17,22 @@ export default function CreateChatInput({id}:{id:Id<"website_data">}) {
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const m = useMutation(api.website.mutate.CreateChatFromWebsite)
-
+  const m = useAction(api.website.mutate.CreateChatFromWebsite)
+  const website = useQuery(api.website.crud.GetWebsiteById,{id})
+  const {setSiteTitle} = useSiteTitlte()
+  useEffect(()=>{
+    if(website===null) return ;
+    if(website){
+      setSiteTitle(website.metadata.title);
+    }
+  },[website])
+  if(website===undefined){
+    return 'loading'
+  }
+  if(!website )
+    return 'not found'
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center bg-black text-white gap-10">
+    <div className="w-full h-full flex flex-col items-center justify-center  gap-10">
       <h1 className="text-3xl font-semibold text-neutral-300">
         Good to see you, {user?.firstName || "User"}.
       </h1>
@@ -34,7 +47,7 @@ export default function CreateChatInput({id}:{id:Id<"website_data">}) {
           setError("")
           setLoading(true)
           try {
-            const chatId = await m({id,msg:message})
+            const chatId = await m({msg:message,websiteId:id})
             router.push(`/website/${id}/chat/${chatId}`)
           } catch (err:any) {
             setError("bro convex literally blew up. try again.")
