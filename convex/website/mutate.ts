@@ -90,7 +90,7 @@ export const saveWebsite =action({
     handler:async(ctx,args)=>{
         const auth = await ctx.auth.getUserIdentity();
         if(!auth) throw new ConvexError("Unauthorized");
-        const req = await fetch("https://gr2q598g-3000.inc1.devtunnels.ms/api/scrape/website?website="+args.url,{
+        const req = await fetch("https://web-chat-peach.vercel.app/api/scrape/website?website="+args.url,{
             headers:{
                 'X-CONVEX-KEY':'test123'
             }
